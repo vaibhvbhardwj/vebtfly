@@ -38,6 +38,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/events").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/events/**").permitAll()
                 .anyRequest().authenticated()
             )
             // 4. Use stateless session management for JWT
