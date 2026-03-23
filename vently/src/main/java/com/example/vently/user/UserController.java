@@ -19,8 +19,6 @@ import com.example.vently.user.dto.EmailPreferencesResponse;
 import com.example.vently.user.dto.UserProfileDto;
 import com.example.vently.user.dto.UserStatisticsDto;
 
-import com.example.vently.service.FirebaseService;
-
 import jakarta.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
@@ -36,7 +34,6 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
-    private final FirebaseService firebaseService;
 
     /**
      * Get current authenticated user's profile
@@ -189,8 +186,7 @@ public class UserController {
     /**
      * Verify OTP for phone number
      */
-    @PostMapping("/phone/verify-otp")
-    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/phone/verify-otp")    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserProfileDto> verifyPhoneOtp(
             Authentication authentication,
             @RequestBody Map<String, String> request) {
@@ -204,24 +200,5 @@ public class UserController {
         return ResponseEntity.ok(profile);
     }
 
-    /**
-     * Verify phone via Firebase ID token.
-     * Frontend completes Firebase Phone Auth, gets an ID token,
-     * sends it here — backend verifies and marks phone as verified.
-     */
-    @PostMapping("/phone/verify-firebase")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserProfileDto> verifyPhoneViaFirebase(
-            Authentication authentication,
-            @RequestBody Map<String, String> request) {
-        User currentUser = (User) authentication.getPrincipal();
-        String idToken = request.get("idToken");
-        if (idToken == null || idToken.isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-        String phone = firebaseService.verifyIdTokenAndGetPhone(idToken);
-        userService.markPhoneVerified(currentUser.getId(), phone);
-        UserProfileDto profile = userService.getUserProfile(currentUser.getId());
-        return ResponseEntity.ok(profile);
-    }
 }
+
