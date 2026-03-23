@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --silent
 COPY . .
-RUN npm run build -- --mode production
+RUN VITE_API_URL=https://api.ventfly.com/api/v1 npm run build
 
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
