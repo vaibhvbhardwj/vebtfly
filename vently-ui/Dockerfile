@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --silent
 COPY . .
-RUN npm run build
+RUN npm run build -- --mode production
 
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
