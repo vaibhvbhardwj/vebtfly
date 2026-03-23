@@ -6,6 +6,14 @@
 # Kiro IDE files
 .kiro/
 
+# Deploy artifacts
+deploy.zip
+*.zip
+
+# Test artifacts
+test_output.txt
+test_result.txt
+
 # OS
 .DS_Store
 Thumbs.db
