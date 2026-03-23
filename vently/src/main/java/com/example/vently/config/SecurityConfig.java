@@ -37,6 +37,7 @@ public class SecurityConfig {
             // 3. Configure authorization
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/actuator/health").permitAll()
                 .anyRequest().authenticated()
             )
             // 4. Use stateless session management for JWT
