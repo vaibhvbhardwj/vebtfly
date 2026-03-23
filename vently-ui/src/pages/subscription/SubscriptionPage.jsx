@@ -212,7 +212,7 @@ const SubscriptionPage = () => {
               <div>
                 <p className="text-gray-600 text-sm">Renewal Date</p>
                 <p className="text-xl font-bold text-gray-900">
-                  {new Date(currentSubscription.endDate).toLocaleDateString()}
+                  {currentSubscription.endDate ? new Date(currentSubscription.endDate).toLocaleDateString() : '—'}
                 </p>
               </div>
             </div>

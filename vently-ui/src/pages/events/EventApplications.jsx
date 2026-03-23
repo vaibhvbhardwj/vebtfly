@@ -410,7 +410,7 @@ const EventApplications = () => {
                   <div className="bg-[#ebf2fa] rounded-xl p-3">
                     <p className="text-xs text-[#6B7280] mb-0.5">Date of Birth</p>
                     <p className="font-semibold text-[#111827] text-sm">
-                      {new Date(profilePopup.volunteerDateOfBirth).toLocaleDateString('en-IN')}
+                      {profilePopup.volunteerDateOfBirth ? new Date(profilePopup.volunteerDateOfBirth).toLocaleDateString('en-IN') : '—'}
                     </p>
                   </div>
                 )}

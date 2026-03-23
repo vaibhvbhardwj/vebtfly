@@ -419,7 +419,7 @@ const VolunteerProfile = () => {
                 </div>
                 <div className="bg-[#ebf2fa] rounded-xl p-3">
                   <p className="text-[#6B7280] text-xs mb-1">Date of Birth</p>
-                  <p className="text-[#111827] font-medium text-sm">{new Date(profile.dateOfBirth).toLocaleDateString('en-IN')}</p>
+                  <p className="text-[#111827] font-medium text-sm">{profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-IN') : '—'}</p>
                 </div>
               </div>
             ) : showIdentityForm ? (
@@ -596,7 +596,7 @@ const VolunteerProfile = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-[#6B7280] text-sm">Member Since</span>
-                  <span className="text-[#111827] font-medium text-sm">{new Date(profile.createdAt).toLocaleDateString()}</span>
+                  <span className="text-[#111827] font-medium text-sm">{profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '—'}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-[#6B7280] text-sm">Total Earnings</span>
