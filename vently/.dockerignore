@@ -1,0 +1,10 @@
+target/
+.mvn/
+*.md
+.git
+.gitignore
+deploy*.sh
+ec2-setup.sh
+nginx.conf
+*.json
+!pom.xml

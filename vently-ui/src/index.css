@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #807aeb;
+  --color-primary-dark: #6b64d4;
+  --color-primary-light: #a09ae8;
+  --color-bg: #ebf2fa;
+  --color-text: #111827;
+  --color-text-secondary: #6B7280;
+  --color-success: #10B981;
+  --color-danger: #EF4444;
+}
+
+:root {
+  background-color: #ebf2fa;
+  color: #111827;
+}
+
+body {
+  margin: 0;
+  padding-bottom: 70px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@media (min-width: 768px) {
+  body {
+    padding-bottom: 0;
+  }
+}
+
+/* Smooth transitions globally */
+* {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease forwards;
+}
+
+.animate-stagger-1 { animation-delay: 0.1s; opacity: 0; animation-fill-mode: forwards; }
+.animate-stagger-2 { animation-delay: 0.2s; opacity: 0; animation-fill-mode: forwards; }
+.animate-stagger-3 { animation-delay: 0.3s; opacity: 0; animation-fill-mode: forwards; }
+.animate-stagger-4 { animation-delay: 0.4s; opacity: 0; animation-fill-mode: forwards; }
+
+/* Card hover lift */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(128, 122, 235, 0.15);
+}
+
+/* Primary button */
+.btn-primary {
+  background: #807aeb;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background: #6b64d4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(128, 122, 235, 0.35);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #ebf2fa; }
+::-webkit-scrollbar-thumb { background: #807aeb; border-radius: 3px; }

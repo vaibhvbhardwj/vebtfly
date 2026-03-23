@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./vently
+    image: vently-backend:latest
+    container_name: vently-backend
+    restart: unless-stopped
+    env_file: ./vently/.env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8080:8080"
+    networks:
+      - vently-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./vently-ui
+    image: vently-frontend:latest
+    container_name: vently-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    networks:
+      - vently-net
+    depends_on:
+      backend:
+        condition: service_healthy
+
+networks:
+  vently-net:
+    driver: bridge
