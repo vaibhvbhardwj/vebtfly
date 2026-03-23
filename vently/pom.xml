@@ -93,11 +93,10 @@
 			<artifactId>s3</artifactId>
 			<version>2.20.26</version>
 		</dependency>
-		<!-- AWS SDK for SES -->
+		<!-- Spring Mail (Gmail SMTP) -->
 		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>ses</artifactId>
-			<version>2.20.26</version>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 		<!-- AWS SDK for SNS (SMS OTP) -->
 		<dependency>

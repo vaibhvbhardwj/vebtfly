@@ -54,10 +54,11 @@ const FloatingDashboardButton = () => {
     if (!isDragging) {
       if (user?.role === 'ORGANIZER') navigate('/organizer/dashboard');
       else if (user?.role === 'VOLUNTEER') navigate('/volunteer/dashboard');
+      else if (user?.role === 'ADMIN') navigate('/admin/dashboard');
     }
   };
 
-  if (!isAuthenticated || !user || !isMobile) return null;
+  if (!isAuthenticated || !user) return null;
 
   return (
     <div

@@ -1,0 +1,21 @@
+[Unit]
+Description=Vently Spring Boot Application
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/opt/vently
+ExecStart=/usr/bin/java -jar -Dspring.profiles.active=prod /opt/vently/app.jar
+SuccessExitStatus=143
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=5
+
+# Environment variables — set these or use a separate EnvironmentFile
+EnvironmentFile=/opt/vently/.env
+
+StandardOutput=append:/var/log/vently/app.log
+StandardError=append:/var/log/vently/error.log
+
+[Install]
+WantedBy=multi-user.target

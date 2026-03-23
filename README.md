@@ -23,8 +23,8 @@ deliverables/
 
 ## Live URLs
 
-- Frontend: https://knomochat.online
-- API: https://api.knomochat.online/api/v1
+- Frontend: https://ventfly.com
+- API: https://ventfly.com/api/v1
 
 ## Quick Start
 

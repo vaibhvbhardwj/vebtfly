@@ -4,6 +4,7 @@ services:
   backend:
     build:
       context: ./vently
+      dockerfile: Dockerfile
     image: vently-backend:latest
     container_name: vently-backend
     restart: unless-stopped
@@ -19,11 +20,12 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 90s
 
   frontend:
     build:
       context: ./vently-ui
+      dockerfile: Dockerfile
     image: vently-frontend:latest
     container_name: vently-frontend
     restart: unless-stopped

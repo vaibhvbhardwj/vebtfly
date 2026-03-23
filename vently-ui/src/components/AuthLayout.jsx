@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const AuthLayout = ({ children, title, subtitle }) => (
   <div className="min-h-screen bg-[#ebf2fa] flex flex-col md:flex-row">
@@ -32,8 +33,16 @@ const AuthLayout = ({ children, title, subtitle }) => (
 
     {/* Right Side: Form */}
     <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-[#ebf2fa]">
-      <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-sm border border-[#807aeb]/10 animate-scale-in">
-        {children}
+      <div className="w-full max-w-md">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-sm text-[#6B7280] hover:text-[#807aeb] transition mb-6"
+        >
+          ← Back to Home
+        </Link>
+        <div className="bg-white rounded-2xl p-8 shadow-sm border border-[#807aeb]/10 animate-scale-in">
+          {children}
+        </div>
       </div>
     </div>
   </div>

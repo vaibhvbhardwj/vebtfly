@@ -227,19 +227,7 @@ const OrganizerProfile = () => {
       )}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* Email not verified banner */}
-        {isOwnProfile && profile && !profile.emailVerified && (
-          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-amber-500">✉️</span>
-              <p className="text-amber-700 text-sm font-medium">Your email is not verified. Verify to secure your account.</p>
-            </div>
-            <button onClick={() => setShowEmailOtpModal(true)}
-              className="px-4 py-2 bg-amber-500 text-white rounded-xl text-sm font-semibold hover:bg-amber-400 transition flex-shrink-0">
-              Verify Email
-            </button>
-          </div>
-        )}
+
 
         {/* No phone number banner */}
         {isOwnProfile && profile && !profile.phone && (
