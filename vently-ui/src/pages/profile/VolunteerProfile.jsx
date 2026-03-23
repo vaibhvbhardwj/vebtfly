@@ -31,106 +31,73 @@ const compressImage = async (file, maxWidth = 800, maxHeight = 800, quality = 0.
   });
 };
 
-// Phone OTP Modal — uses backend SNS OTP (no external dependencies)
-const PhoneOtpModal = ({ phone, onClose, onVerified }) => {
-  const [step, setStep] = useState('enter_phone');
-  const [phoneInput, setPhoneInput] = useState(phone || '');
+// Email OTP Modal for existing users
+const EmailOtpModal = ({ email, onClose, onVerified }) => {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sent, setSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const [devOtp, setDevOtp] = useState('');
 
-  useEffect(() => {
-    if (countdown > 0) {
-      const t = setTimeout(() => setCountdown(c => c - 1), 1000);
-      return () => clearTimeout(t);
-    }
-  }, [countdown]);
+  const startCountdown = () => {
+    setCountdown(60);
+    const interval = setInterval(() => {
+      setCountdown(c => { if (c <= 1) { clearInterval(interval); return 0; } return c - 1; });
+    }, 1000);
+  };
 
-  const handleSendOtp = async () => {
-    if (!phoneInput.trim()) { setError('Enter a phone number'); return; }
+  const handleSend = async () => {
     setLoading(true); setError('');
     try {
-      const res = await api.post('/users/phone/send-otp', { phone: phoneInput.trim() });
-      // dev mode: backend returns OTP in response when SNS not configured
-      if (res.data.devOtp) setDevOtp(res.data.devOtp);
-      setStep('enter_otp');
-      setCountdown(60);
+      await api.post('/auth/send-email-otp', { email });
+      setSent(true);
+      startCountdown();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP. Check the phone number and try again.');
+      setError(err.response?.data?.message || 'Failed to send code.');
     } finally { setLoading(false); }
   };
 
-  const handleVerifyOtp = async () => {
-    if (!otp.trim() || otp.length < 6) { setError('Enter the 6-digit OTP'); return; }
+  const handleVerify = async () => {
+    if (otp.length < 6) { setError('Enter the 6-digit code'); return; }
     setLoading(true); setError('');
     try {
-      const res = await api.post('/users/phone/verify-otp', { otp });
-      onVerified(res.data);
+      await api.post('/auth/verify-email-otp', { email, otp });
+      onVerified();
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid OTP. Try again.');
+      setError(err.response?.data?.message || 'Invalid code. Try again.');
     } finally { setLoading(false); }
-  };
-
-  const handleResend = () => {
-    setStep('enter_phone');
-    setOtp('');
-    setError('');
-    setDevOtp('');
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl border border-[#807aeb]/20 shadow-xl p-6 w-full max-w-sm">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-[#111827]">Verify Phone Number</h2>
-          <button onClick={onClose} className="text-[#6B7280] hover:text-[#111827] transition">
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
+          <h2 className="text-xl font-bold text-[#111827]">Verify Email</h2>
+          <button onClick={onClose} className="text-[#6B7280] hover:text-[#111827] transition text-xl">✕</button>
         </div>
-        {error && <p className="text-[#EF4444] text-sm mb-4 p-3 bg-red-50 rounded-lg border border-red-100">{error}</p>}
-        {step === 'enter_phone' ? (
+        {error && <p className="text-[#EF4444] text-sm mb-4 p-3 bg-red-50 rounded-lg">{error}</p>}
+        {!sent ? (
           <>
-            <p className="text-[#6B7280] text-sm mb-4">Enter your mobile number. We'll send a 6-digit OTP via SMS.</p>
-            <input
-              type="tel"
-              value={phoneInput}
-              onChange={e => setPhoneInput(e.target.value)}
-              placeholder="+91 98765 43210"
-              className="w-full px-4 py-3 bg-[#ebf2fa] border border-[#807aeb]/20 rounded-xl text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:border-[#807aeb] mb-4"
-            />
-            <button onClick={handleSendOtp} disabled={loading}
+            <p className="text-[#6B7280] text-sm mb-4">We'll send a 6-digit code to <span className="font-semibold text-[#111827]">{email}</span></p>
+            <button onClick={handleSend} disabled={loading}
               className="w-full py-3 bg-[#807aeb] text-white rounded-xl font-semibold hover:bg-[#6b64d4] transition disabled:opacity-50">
-              {loading ? 'Sending...' : 'Send OTP'}
+              {loading ? 'Sending...' : 'Send Code'}
             </button>
           </>
         ) : (
           <>
-            <p className="text-[#6B7280] text-sm mb-1">OTP sent to <span className="text-[#111827] font-medium">{phoneInput}</span></p>
-            <p className="text-[#9CA3AF] text-xs mb-4">Valid for 10 minutes</p>
-            {devOtp && (
-              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
-                Dev mode OTP: <span className="font-bold">{devOtp}</span>
-              </p>
-            )}
-            <input
-              type="text"
-              value={otp}
-              onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="Enter 6-digit OTP"
-              maxLength={6}
-              className="w-full px-4 py-3 bg-[#ebf2fa] border border-[#807aeb]/20 rounded-xl text-[#111827] text-center text-2xl tracking-widest placeholder-[#9CA3AF] focus:outline-none focus:border-[#807aeb] mb-4"
-            />
-            <button onClick={handleVerifyOtp} disabled={loading || otp.length < 6}
+            <p className="text-[#6B7280] text-sm mb-4">Code sent to <span className="font-semibold text-[#111827]">{email}</span></p>
+            <input type="text" inputMode="numeric" maxLength={6} value={otp}
+              onChange={e => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
+              placeholder="000000"
+              className="w-full px-4 py-3 bg-[#ebf2fa] border border-[#807aeb]/20 rounded-xl text-[#111827] text-center text-2xl tracking-widest focus:outline-none focus:border-[#807aeb] mb-4" />
+            <button onClick={handleVerify} disabled={loading || otp.length < 6}
               className="w-full py-3 bg-[#10B981] text-white rounded-xl font-semibold hover:bg-[#059669] transition disabled:opacity-50 mb-3">
-              {loading ? 'Verifying...' : 'Verify OTP'}
+              {loading ? 'Verifying...' : 'Verify'}
             </button>
-            <button onClick={handleResend} disabled={countdown > 0}
+            <button onClick={handleSend} disabled={countdown > 0}
               className="w-full py-2 text-[#6B7280] text-sm hover:text-[#807aeb] transition disabled:opacity-40">
-              {countdown > 0 ? `Resend OTP in ${countdown}s` : 'Resend OTP'}
+              {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
             </button>
           </>
         )}
@@ -152,6 +119,7 @@ const VolunteerProfile = () => {
   const [galleryPhotos, setGalleryPhotos] = useState([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
+  const [showEmailOtpModal, setShowEmailOtpModal] = useState(false);
   const [showIdentityForm, setShowIdentityForm] = useState(false);
   const [identityData, setIdentityData] = useState({ fullName: '', gender: '', dateOfBirth: '' });
   const [savingIdentity, setSavingIdentity] = useState(false);
@@ -210,9 +178,15 @@ const VolunteerProfile = () => {
   const handleSaveProfile = async () => {
     try {
       setLoading(true);
-      const res = await api.put('/users/profile', { fullName: editData.name, bio: editData.bio, skills: editData.skills, experience: editData.experience });
+      const res = await api.put('/users/profile', {
+        fullName: editData.name,
+        bio: editData.bio,
+        skills: editData.skills,
+        experience: editData.experience,
+        phone: editData.phone,
+      });
       const data = res.data;
-      setProfile(prev => ({ ...prev, name: data.fullName || prev.name, bio: data.bio, skills: data.skills, experience: data.experience }));
+      setProfile(prev => ({ ...prev, name: data.fullName || prev.name, bio: data.bio, skills: data.skills, experience: data.experience, phone: data.phone || prev.phone }));
       setIsEditing(false);
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
@@ -289,6 +263,11 @@ const VolunteerProfile = () => {
     setShowOtpModal(false);
   };
 
+  const handleEmailVerified = () => {
+    setProfile(prev => ({ ...prev, emailVerified: true }));
+    setShowEmailOtpModal(false);
+  };
+
   if (loading) return (
     <div className="min-h-screen bg-[#ebf2fa] py-8">
       <div className="max-w-4xl mx-auto px-4"><div className="animate-pulse space-y-4"><div className="h-32 bg-white rounded-2xl" /><div className="h-4 bg-white rounded w-3/4" /></div></div>
@@ -303,26 +282,40 @@ const VolunteerProfile = () => {
 
   return (
     <div className="min-h-screen bg-[#ebf2fa] py-8 animate-fade-in">
-      {showOtpModal && (
-        <PhoneOtpModal
-          phone={editData.phone || profile.phone}
-          onClose={() => setShowOtpModal(false)}
-          onVerified={handlePhoneVerified}
+      {showEmailOtpModal && (
+        <EmailOtpModal
+          email={profile.email}
+          onClose={() => setShowEmailOtpModal(false)}
+          onVerified={handleEmailVerified}
         />
       )}
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* Phone verification banner */}
-        {isOwnProfile && !profile.phoneVerified && (
-          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-2xl flex items-center justify-between gap-4">
+        {/* Email not verified banner */}
+        {isOwnProfile && !profile.emailVerified && (
+          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <span className="text-yellow-500">⚠️</span>
-              <p className="text-yellow-700 text-sm font-medium">Phone number not verified. Verify to access all features.</p>
+              <span className="text-amber-500">✉️</span>
+              <p className="text-amber-700 text-sm font-medium">Your email is not verified. Verify to secure your account.</p>
             </div>
-            <button onClick={() => setShowOtpModal(true)}
-              className="px-4 py-2 bg-yellow-500 text-white rounded-xl text-sm font-semibold hover:bg-yellow-400 transition flex-shrink-0">
-              Verify Now
+            <button onClick={() => setShowEmailOtpModal(true)}
+              className="px-4 py-2 bg-amber-500 text-white rounded-xl text-sm font-semibold hover:bg-amber-400 transition flex-shrink-0">
+              Verify Email
+            </button>
+          </div>
+        )}
+
+        {/* No phone number banner */}
+        {isOwnProfile && !profile.phone && (
+          <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-blue-500">📱</span>
+              <p className="text-blue-700 text-sm font-medium">Add your mobile number so organizers can reach you directly.</p>
+            </div>
+            <button onClick={() => setIsEditing(true)}
+              className="px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-400 transition flex-shrink-0">
+              Add Now
             </button>
           </div>
         )}
@@ -494,24 +487,16 @@ const VolunteerProfile = () => {
                   className="w-full px-4 py-2 bg-[#ebf2fa] border border-transparent rounded-xl text-[#111827] focus:outline-none focus:border-[#807aeb] transition" />
               </div>
 
-              {/* Phone with verify button */}
+              {/* Phone — just save, no verification needed */}
               <div>
                 <label className="block text-sm font-medium text-[#111827] mb-2">
-                  Phone Number <span className="text-[#EF4444]">*</span>
-                  {profile.phoneVerified && <span className="ml-2 text-xs text-[#10B981]">✓ Verified</span>}
+                  Mobile Number
+                  {profile.phone && <span className="ml-2 text-xs text-[#10B981]">✓ Saved</span>}
                 </label>
-                <div className="flex gap-2">
-                  <input type="tel" name="phone" value={editData.phone || ''} onChange={handleInputChange}
-                    placeholder="+91 98765 43210"
-                    className="flex-1 px-4 py-2 bg-[#ebf2fa] border border-transparent rounded-xl text-[#111827] focus:outline-none focus:border-[#807aeb] transition" />
-                  <button type="button" onClick={() => setShowOtpModal(true)}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition ${profile.phoneVerified ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20' : 'bg-yellow-500 text-white hover:bg-yellow-400'}`}>
-                    {profile.phoneVerified ? '✓ Verified' : 'Verify'}
-                  </button>
-                </div>
-                {!profile.phoneVerified && (
-                  <p className="text-yellow-600 text-xs mt-1">Phone verification is required to use the platform.</p>
-                )}
+                <input type="tel" name="phone" value={editData.phone || ''} onChange={handleInputChange}
+                  placeholder="e.g. 9876543210"
+                  className="w-full px-4 py-2 bg-[#ebf2fa] border border-transparent rounded-xl text-[#111827] focus:outline-none focus:border-[#807aeb] transition" />
+                <p className="text-xs text-[#6B7280] mt-1">Organizers may use this to contact you directly</p>
               </div>
 
               <div>

@@ -28,4 +28,16 @@ public class AuthController {
     public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
         return ResponseEntity.ok(service.authenticate(request));
     }
+
+    @PostMapping("/send-email-otp")
+    public ResponseEntity<Void> sendEmailOtp(@RequestBody java.util.Map<String, String> body) {
+        service.sendEmailOtp(body.get("email"));
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/verify-email-otp")
+    public ResponseEntity<Void> verifyEmailOtp(@RequestBody java.util.Map<String, String> body) {
+        service.verifyEmailOtp(body.get("email"), body.get("otp"));
+        return ResponseEntity.ok().build();
+    }
 }

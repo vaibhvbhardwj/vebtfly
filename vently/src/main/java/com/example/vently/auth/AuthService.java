@@ -1,7 +1,6 @@
 package com.example.vently.auth;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,6 +13,7 @@ import com.example.vently.auth.dto.AuthenticationRequest;
 import com.example.vently.auth.dto.AuthenticationResponse;
 import com.example.vently.auth.dto.RegisterRequest;
 import com.example.vently.audit.AuditService;
+import com.example.vently.notification.EmailService;
 import com.example.vently.subscription.SubscriptionRepository;
 import com.example.vently.subscription.SubscriptionTier;
 import com.example.vently.user.User;
@@ -33,6 +33,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final SubscriptionRepository subscriptionRepository;
     private final AuditService auditService;
+    private final EmailService emailService;
 
     public AuthenticationResponse register(RegisterRequest request) {
         // Block ADMIN role from public registration
@@ -46,11 +47,12 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
                 .gender(request.getGender())
+                .phone(request.getPhone())
                 .build();
         var savedUser = repository.save(user);
         
-        // Send verification email after successful registration
-        sendVerificationEmail(savedUser.getEmail());
+        // Send email OTP for verification
+        sendEmailOtp(savedUser.getEmail());
         
         var jwtToken = jwtService.generateToken(savedUser);
         
@@ -113,52 +115,59 @@ public class AuthService {
     }
     
     /**
-     * Generates a verification token and sends a verification email to the user.
-     * For now, this logs the verification link (actual email sending will be implemented in Phase 7).
-     * 
-     * @param email the user's email address
+     * Generates a 6-digit OTP and sends it to the user's email for verification.
      */
-    public void sendVerificationEmail(String email) {
+    public void sendEmailOtp(String email) {
         var user = repository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        // Generate a unique verification token
-        String token = UUID.randomUUID().toString();
-        
-        // Set token and expiration (24 hours from now)
-        user.setVerificationToken(token);
-        user.setVerificationTokenExpiresAt(LocalDateTime.now().plusHours(24));
+
+        String otp = String.format("%06d", (int)(Math.random() * 1000000));
+        user.setEmailOtp(otp);
+        user.setEmailOtpExpiresAt(LocalDateTime.now().plusMinutes(10));
         repository.save(user);
-        
-        // For now, log the verification link (actual email sending comes in Phase 7)
-        String verificationLink = "http://localhost:5173/verify-email?token=" + token;
-        log.info("Verification email would be sent to: {}", email);
-        log.info("Verification link: {}", verificationLink);
-        log.info("Token expires at: {}", user.getVerificationTokenExpiresAt());
-    }
-    
-    /**
-     * Verifies a user's email address using the provided token.
-     * 
-     * @param token the verification token
-     * @throws RuntimeException if token is invalid or expired
-     */
-    public void verifyEmail(String token) {
-        var user = repository.findByVerificationToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid verification token"));
-        
-        // Check if token has expired
-        if (user.getVerificationTokenExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Verification token has expired");
+
+        // Send via SES if configured, otherwise log
+        String subject = "Your Ventfly verification code";
+        String html = """
+            <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px">
+              <h2 style="color:#807aeb">Verify your email</h2>
+              <p>Hi %s,</p>
+              <p>Use the code below to verify your email address. It expires in 10 minutes.</p>
+              <div style="font-size:36px;font-weight:700;letter-spacing:8px;color:#111827;background:#ebf2fa;padding:20px;border-radius:12px;text-align:center;margin:24px 0">%s</div>
+              <p style="color:#6B7280;font-size:13px">If you didn't create a Ventfly account, ignore this email.</p>
+            </div>
+            """.formatted(user.getFullName(), otp);
+
+        try {
+            emailService.sendRawEmail(email, subject, html);
+        } catch (Exception e) {
+            log.warn("Could not send email OTP via SES, OTP for {}: {}", email, otp);
         }
-        
-        // Mark email as verified
+        log.info("Email OTP for {}: {}", email, otp);
+    }
+
+    /**
+     * Verifies the 6-digit email OTP.
+     */
+    public void verifyEmailOtp(String email, String otp) {
+        var user = repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getEmailOtp() == null || user.getEmailOtpExpiresAt() == null) {
+            throw new com.example.vently.exception.ValidationException("No OTP requested. Please request a new one.");
+        }
+        if (LocalDateTime.now().isAfter(user.getEmailOtpExpiresAt())) {
+            throw new com.example.vently.exception.ValidationException("OTP has expired. Please request a new one.");
+        }
+        if (!user.getEmailOtp().equals(otp.trim())) {
+            throw new com.example.vently.exception.ValidationException("Invalid OTP. Please try again.");
+        }
+
         user.setEmailVerified(true);
-        user.setVerificationToken(null); // Clear the token after use
-        user.setVerificationTokenExpiresAt(null);
+        user.setEmailOtp(null);
+        user.setEmailOtpExpiresAt(null);
         repository.save(user);
-        
-        log.info("Email verified successfully for user: {}", user.getEmail());
+        log.info("Email verified via OTP for: {}", email);
     }
 
     /**

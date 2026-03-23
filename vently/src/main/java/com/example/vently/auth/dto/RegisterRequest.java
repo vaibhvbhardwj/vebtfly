@@ -29,4 +29,6 @@ public class RegisterRequest {
     private Role role;
 
     private String gender;
+
+    private String phone;
 }

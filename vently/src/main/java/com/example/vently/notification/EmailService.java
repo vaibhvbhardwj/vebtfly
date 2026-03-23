@@ -41,6 +41,13 @@ public class EmailService {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("hh:mm a");
 
     /**
+     * Send a raw HTML email — used for OTP and other transactional emails
+     */
+    public void sendRawEmail(String toEmail, String subject, String htmlBody) {
+        sendEmail(toEmail, subject, htmlBody);
+    }
+
+    /**
      * Send welcome email on user registration
      */
     public void sendWelcomeEmail(User user) {

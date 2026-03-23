@@ -95,6 +95,11 @@ public class User implements UserDetails {
     
     private LocalDateTime verificationTokenExpiresAt;
 
+    // Email OTP fields (6-digit code for registration verification)
+    private String emailOtp;
+
+    private LocalDateTime emailOtpExpiresAt;
+
     // Email notification preferences
     @Column(nullable = false)
     @Builder.Default
