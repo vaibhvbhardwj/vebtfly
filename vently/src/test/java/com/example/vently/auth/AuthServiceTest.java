@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.example.vently.auth.dto.AuthenticationResponse;
 import com.example.vently.auth.dto.RegisterRequest;
+import com.example.vently.notification.EmailService;
 import com.example.vently.subscription.SubscriptionRepository;
 import com.example.vently.subscription.SubscriptionTier;
 import com.example.vently.user.Role;
@@ -42,6 +43,12 @@ class AuthServiceTest {
     @Mock
     private SubscriptionRepository subscriptionRepository;
 
+    @Mock
+    private com.example.vently.audit.AuditService auditService;
+
+    @Mock
+    private EmailService emailService;
+
     @InjectMocks
     private AuthService authService;
 
@@ -60,7 +67,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void testRegister_ShouldCreateUserAndSendVerificationEmail() {
+    void testRegister_ShouldCreateUserAndSendEmailOtp() {
         // Arrange
         RegisterRequest request = new RegisterRequest();
         request.setEmail("test@example.com");
@@ -68,7 +75,6 @@ class AuthServiceTest {
         request.setPassword("password123");
         request.setRole(Role.VOLUNTEER);
 
-        // Create a user with ID set (simulating what the database would do)
         User savedUser = User.builder()
                 .id(1L)
                 .email("test@example.com")
@@ -82,7 +88,7 @@ class AuthServiceTest {
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(savedUser));
         when(jwtService.generateToken(any(User.class))).thenReturn("jwt-token");
-        when(subscriptionRepository.findByUserId(any())).thenReturn(Optional.empty()); // No subscription yet
+        when(subscriptionRepository.findByUserId(any())).thenReturn(Optional.empty());
 
         // Act
         AuthenticationResponse response = authService.register(request);
@@ -95,85 +101,97 @@ class AuthServiceTest {
         assertEquals("Test User", response.getFullName());
         assertEquals(Role.VOLUNTEER, response.getRole());
         assertEquals(false, response.getEmailVerified());
-        assertEquals(SubscriptionTier.FREE, response.getSubscriptionTier()); // Defaults to FREE
-        verify(userRepository, times(2)).save(any(User.class)); // Once for register, once for verification token
-        verify(userRepository).findByEmail("test@example.com");
+        assertEquals(SubscriptionTier.FREE, response.getSubscriptionTier());
+        // save called twice: once for register, once for OTP
+        verify(userRepository, times(2)).save(any(User.class));
     }
 
     @Test
-    void testSendVerificationEmail_ShouldGenerateTokenAndSetExpiration() {
+    void testSendEmailOtp_ShouldSetOtpAndExpiry() {
         // Arrange
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         // Act
-        authService.sendVerificationEmail("test@example.com");
+        authService.sendEmailOtp("test@example.com");
 
         // Assert
         verify(userRepository).findByEmail("test@example.com");
-        verify(userRepository).save(argThat(user -> 
-            user.getVerificationToken() != null && 
-            user.getVerificationTokenExpiresAt() != null &&
-            user.getVerificationTokenExpiresAt().isAfter(LocalDateTime.now())
+        verify(userRepository).save(argThat(user ->
+            user.getEmailOtp() != null &&
+            user.getEmailOtp().length() == 6 &&
+            user.getEmailOtpExpiresAt() != null &&
+            user.getEmailOtpExpiresAt().isAfter(LocalDateTime.now())
         ));
     }
 
     @Test
-    void testSendVerificationEmail_ShouldThrowException_WhenUserNotFound() {
+    void testSendEmailOtp_ShouldThrowException_WhenUserNotFound() {
         // Arrange
         when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> 
-            authService.sendVerificationEmail("nonexistent@example.com")
+        assertThrows(RuntimeException.class, () ->
+            authService.sendEmailOtp("nonexistent@example.com")
         );
     }
 
     @Test
-    void testVerifyEmail_ShouldMarkEmailAsVerified() {
+    void testVerifyEmailOtp_ShouldMarkEmailAsVerified() {
         // Arrange
-        String token = "valid-token";
-        testUser.setVerificationToken(token);
-        testUser.setVerificationTokenExpiresAt(LocalDateTime.now().plusHours(1));
-        
-        when(userRepository.findByVerificationToken(token)).thenReturn(Optional.of(testUser));
+        testUser.setEmailOtp("123456");
+        testUser.setEmailOtpExpiresAt(LocalDateTime.now().plusMinutes(5));
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         // Act
-        authService.verifyEmail(token);
+        authService.verifyEmailOtp("test@example.com", "123456");
 
         // Assert
-        verify(userRepository).findByVerificationToken(token);
-        verify(userRepository).save(argThat(user -> 
+        verify(userRepository).save(argThat(user ->
             user.getEmailVerified() == true &&
-            user.getVerificationToken() == null &&
-            user.getVerificationTokenExpiresAt() == null
+            user.getEmailOtp() == null &&
+            user.getEmailOtpExpiresAt() == null
         ));
     }
 
     @Test
-    void testVerifyEmail_ShouldThrowException_WhenTokenInvalid() {
+    void testVerifyEmailOtp_ShouldThrowException_WhenOtpInvalid() {
         // Arrange
-        when(userRepository.findByVerificationToken("invalid-token")).thenReturn(Optional.empty());
+        testUser.setEmailOtp("123456");
+        testUser.setEmailOtpExpiresAt(LocalDateTime.now().plusMinutes(5));
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> 
-            authService.verifyEmail("invalid-token")
+        assertThrows(Exception.class, () ->
+            authService.verifyEmailOtp("test@example.com", "000000")
         );
     }
 
     @Test
-    void testVerifyEmail_ShouldThrowException_WhenTokenExpired() {
+    void testVerifyEmailOtp_ShouldThrowException_WhenOtpExpired() {
         // Arrange
-        String token = "expired-token";
-        testUser.setVerificationToken(token);
-        testUser.setVerificationTokenExpiresAt(LocalDateTime.now().minusHours(1)); // Expired
-        
-        when(userRepository.findByVerificationToken(token)).thenReturn(Optional.of(testUser));
+        testUser.setEmailOtp("123456");
+        testUser.setEmailOtpExpiresAt(LocalDateTime.now().minusMinutes(1)); // expired
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> 
-            authService.verifyEmail(token)
+        assertThrows(Exception.class, () ->
+            authService.verifyEmailOtp("test@example.com", "123456")
+        );
+    }
+
+    @Test
+    void testVerifyEmailOtp_ShouldThrowException_WhenNoOtpRequested() {
+        // Arrange — no OTP set on user
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+
+        // Act & Assert
+        assertThrows(Exception.class, () ->
+            authService.verifyEmailOtp("test@example.com", "123456")
         );
     }
 }
