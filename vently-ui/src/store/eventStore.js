@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+
 export const useEventStore = create((set, get) => ({
   events: [],
   filteredEvents: [],
@@ -45,7 +47,7 @@ export const useEventStore = create((set, get) => ({
         headers.Authorization = `Bearer ${token}`;
       }
 
-      const response = await fetch(`/api/v1/events?${params}`, { headers });
+      const response = await fetch(`${API_BASE}/events?${params}`, { headers });
 
       if (!response.ok) throw new Error('Failed to fetch events');
 
@@ -74,7 +76,7 @@ export const useEventStore = create((set, get) => ({
         throw new Error('Event ID is required');
       }
 
-      const response = await fetch(`/api/v1/events/${eventId}`, {
+      const response = await fetch(`${API_BASE}/events/${eventId}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
