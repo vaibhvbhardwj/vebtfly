@@ -29,6 +29,7 @@ import com.example.vently.event.dto.EventCreateDto;
 import com.example.vently.event.dto.EventFilterDto;
 import com.example.vently.event.dto.EventResponseDto;
 import com.example.vently.event.dto.EventUpdateDto;
+import com.example.vently.rating.RatingRepository;
 import com.example.vently.service.S3Service;
 import com.example.vently.user.User;
 
@@ -49,6 +50,7 @@ public class EventController {
     private final EventService eventService;
     private final ApplicationService applicationService;
     private final S3Service s3Service;
+    private final RatingRepository ratingRepository;
 
     /**
      * Create a new event (ORGANIZER only)
@@ -228,16 +230,35 @@ public class EventController {
      * Convert Application entity to ApplicationResponseDto
      */
     private ApplicationResponseDto toApplicationResponseDto(Application application) {
+        var volunteer = application.getVolunteer();
+        
+        // Parse gallery photos from JSON string
+        List<String> galleryPhotos = new java.util.ArrayList<>();
+        if (volunteer.getGalleryPhotos() != null && !volunteer.getGalleryPhotos().isBlank()) {
+            try {
+                galleryPhotos = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(volunteer.getGalleryPhotos(), new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {});
+            } catch (Exception ignored) {}
+        }
+
         return ApplicationResponseDto.builder()
             .id(application.getId())
             .eventId(application.getEvent().getId())
             .eventTitle(application.getEvent().getTitle())
             .eventLocation(application.getEvent().getLocation())
             .eventDateTime(application.getEvent().getEventDateTime())
-            .volunteerId(application.getVolunteer().getId())
-            .volunteerName(application.getVolunteer().getFullName())
-            .volunteerEmail(application.getVolunteer().getEmail())
-            .volunteerGender(application.getVolunteer().getGender())
+            .volunteerId(volunteer.getId())
+            .volunteerName(volunteer.getFullName())
+            .volunteerEmail(volunteer.getEmail())
+            .volunteerGender(volunteer.getGender())
+            .volunteerDateOfBirth(volunteer.getDateOfBirth())
+            .volunteerProfilePictureUrl(volunteer.getProfilePictureUrl())
+            .volunteerGalleryPhotos(galleryPhotos)
+            .volunteerAverageRating(ratingRepository.calculateAverageRating(volunteer.getId()))
+            .volunteerRatingCount((int) ratingRepository.countByRatedUserId(volunteer.getId()))
+            .volunteerVerificationBadge(volunteer.getVerificationBadge())
+            .volunteerNoShowCount(volunteer.getNoShowCount())
+            .volunteerPhone(volunteer.getPhone())
             .status(application.getStatus())
             .appliedAt(application.getAppliedAt())
             .acceptedAt(application.getAcceptedAt())

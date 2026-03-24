@@ -88,7 +88,7 @@ public class EventService {
         // Validate updated data
         validateEventData(updatedEvent);
         
-        // Update fields (excluding payment which cannot be changed)
+        // Update fields
         event.setTitle(updatedEvent.getTitle());
         event.setDescription(updatedEvent.getDescription());
         event.setLocation(updatedEvent.getLocation());
@@ -97,6 +97,12 @@ public class EventService {
         event.setRequiredVolunteers(updatedEvent.getRequiredVolunteers());
         event.setCategory(updatedEvent.getCategory());
         event.setApplicationDeadline(updatedEvent.getApplicationDeadline());
+        if (updatedEvent.getPaymentPerMaleVolunteer() != null) {
+            event.setPaymentPerMaleVolunteer(updatedEvent.getPaymentPerMaleVolunteer());
+        }
+        if (updatedEvent.getPaymentPerFemaleVolunteer() != null) {
+            event.setPaymentPerFemaleVolunteer(updatedEvent.getPaymentPerFemaleVolunteer());
+        }
         if (updatedEvent.getImageUrl() != null) {
             event.setImageUrl(updatedEvent.getImageUrl());
         }
@@ -280,7 +286,7 @@ public class EventService {
             throw new IllegalStateException("You can only update your own events");
         }
         
-        // Build updated event with only non-null fields from DTO (payment always preserved from existing event)
+        // Build updated event with only non-null fields from DTO (base payment always preserved)
         Event updatedEvent = Event.builder()
             .title(dto.getTitle() != null ? dto.getTitle() : event.getTitle())
             .description(dto.getDescription() != null ? dto.getDescription() : event.getDescription())
@@ -288,7 +294,9 @@ public class EventService {
             .date(dto.getDate() != null ? dto.getDate() : event.getDate())
             .time(dto.getTime() != null ? dto.getTime() : event.getTime())
             .requiredVolunteers(dto.getRequiredVolunteers() != null ? dto.getRequiredVolunteers() : event.getRequiredVolunteers())
-            .paymentPerVolunteer(event.getPaymentPerVolunteer()) // always preserve existing payment
+            .paymentPerVolunteer(event.getPaymentPerVolunteer()) // always preserve base payment
+            .paymentPerMaleVolunteer(dto.getPaymentPerMaleVolunteer() != null ? dto.getPaymentPerMaleVolunteer() : event.getPaymentPerMaleVolunteer())
+            .paymentPerFemaleVolunteer(dto.getPaymentPerFemaleVolunteer() != null ? dto.getPaymentPerFemaleVolunteer() : event.getPaymentPerFemaleVolunteer())
             .category(dto.getCategory() != null ? dto.getCategory() : event.getCategory())
             .applicationDeadline(dto.getApplicationDeadline() != null ? dto.getApplicationDeadline() : event.getApplicationDeadline())
             .imageUrl(dto.getImageUrl() != null ? dto.getImageUrl() : event.getImageUrl())

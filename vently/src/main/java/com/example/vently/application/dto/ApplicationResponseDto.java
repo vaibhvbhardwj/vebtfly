@@ -33,6 +33,7 @@ public class ApplicationResponseDto {
     private LocalDate volunteerDateOfBirth;
     private String volunteerProfilePictureUrl;
     private List<String> volunteerGalleryPhotos;
+    private String volunteerPhone;
     private Double volunteerAverageRating;
     private Integer volunteerRatingCount;
     private Boolean volunteerVerificationBadge;

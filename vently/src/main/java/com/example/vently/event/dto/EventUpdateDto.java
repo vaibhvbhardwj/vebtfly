@@ -42,10 +42,13 @@ public class EventUpdateDto {
     @Min(value = 1, message = "At least 1 volunteer is required")
     private Integer requiredVolunteers;
     
-    // Payment is read-only and cannot be updated
-    // @DecimalMin(value = "0.0", inclusive = false, message = "Payment must be greater than 0")
-    // private BigDecimal paymentPerVolunteer;
-    
+    // Payment fields — optional, only updated if provided
+    @DecimalMin(value = "0.0", inclusive = true, message = "Payment cannot be negative")
+    private BigDecimal paymentPerMaleVolunteer;
+
+    @DecimalMin(value = "0.0", inclusive = true, message = "Payment cannot be negative")
+    private BigDecimal paymentPerFemaleVolunteer;
+
     @Size(max = 100, message = "Category must not exceed 100 characters")
     private String category;
     

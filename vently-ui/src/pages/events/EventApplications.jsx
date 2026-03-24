@@ -396,7 +396,7 @@ const EventApplications = () => {
             </div>
 
             {/* Identity info */}
-            {(profilePopup.volunteerDateOfBirth || profilePopup.volunteerGender) && (
+            {(profilePopup.volunteerDateOfBirth || profilePopup.volunteerGender || profilePopup.volunteerPhone) && (
               <div className="mx-6 mb-4 grid grid-cols-2 gap-3">
                 {profilePopup.volunteerDateOfBirth && (
                   <div className="bg-[#ebf2fa] rounded-xl p-3">
@@ -412,6 +412,12 @@ const EventApplications = () => {
                     <p className="font-semibold text-[#111827] text-sm">
                       {profilePopup.volunteerDateOfBirth ? new Date(profilePopup.volunteerDateOfBirth).toLocaleDateString('en-IN') : '—'}
                     </p>
+                  </div>
+                )}
+                {profilePopup.volunteerPhone && (
+                  <div className="bg-[#ebf2fa] rounded-xl p-3 col-span-2">
+                    <p className="text-xs text-[#6B7280] mb-0.5">Phone</p>
+                    <p className="font-semibold text-[#111827] text-sm">{profilePopup.volunteerPhone}</p>
                   </div>
                 )}
               </div>
@@ -439,10 +445,10 @@ const EventApplications = () => {
             {profilePopup.volunteerGalleryPhotos?.length > 0 && (
               <div className="mx-6 mb-4">
                 <p className="text-xs font-semibold text-[#6B7280] mb-2">Photos</p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-2">
                   {profilePopup.volunteerGalleryPhotos.map((url, idx) => (
                     <img key={idx} src={url} alt={`Photo ${idx + 1}`}
-                      className="w-full h-24 object-cover rounded-xl" crossOrigin="anonymous" />
+                      className="w-full rounded-xl object-cover max-h-64" crossOrigin="anonymous" />
                   ))}
                 </div>
               </div>
