@@ -78,7 +78,7 @@ const EventDetails = () => {
   const handleStartEvent = async () => {
     setIsStarting(true);
     try {
-      await fetch(`${API_BASE_URL}/events/${selectedEvent.id}/start`, {
+      await fetch(`${API_BASE}/events/${selectedEvent.id}/start`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
