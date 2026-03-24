@@ -7,6 +7,8 @@ import { RatingStars } from '../../components/shared/RatingStars';
 import { formatDate, formatCurrency, formatRelativeTime } from '../../utils/formatters';
 import { USER_ROLES } from '../../utils/constants';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -34,7 +36,7 @@ const EventDetails = () => {
   // Fetch volunteer profile when modal opens
   useEffect(() => {
     if (isApplyModalOpen && user?.role === 'VOLUNTEER' && !volunteerProfile) {
-      fetch('/api/v1/users/profile', {
+      fetch(`${API_BASE}/users/profile`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       })
         .then(r => r.ok ? r.json() : null)
@@ -46,7 +48,7 @@ const EventDetails = () => {
   const handleApply = async () => {
     setIsApplying(true);
     try {
-      const response = await fetch('/api/v1/applications', {
+      const response = await fetch(`${API_BASE}/applications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -127,12 +129,12 @@ const EventDetails = () => {
         </button>
 
         <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#807aeb]/10 mb-6">
-          {/* Hero */}
-          <div className="relative h-72 bg-gradient-to-br from-[#807aeb]/30 to-[#807aeb]/60 overflow-hidden">
+          {/* Hero — full natural height */}
+          <div className="relative w-full bg-gradient-to-br from-[#807aeb]/30 to-[#807aeb]/60 overflow-hidden">
             {selectedEvent.imageUrl ? (
-              <img src={selectedEvent.imageUrl} alt={selectedEvent.title} className="w-full h-full object-cover" />
+              <img src={selectedEvent.imageUrl} alt={selectedEvent.title} className="w-full h-auto block" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-6xl opacity-30">🎪</div>
+              <div className="w-full h-72 flex items-center justify-center text-6xl opacity-30">🎪</div>
             )}
             <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 text-[#807aeb] rounded-full text-sm font-semibold">
               {selectedEvent.status}
@@ -174,8 +176,25 @@ const EventDetails = () => {
                 <p className="text-[#111827] font-medium text-sm">📍 {selectedEvent.location}</p>
               </div>
               <div className="bg-[#ebf2fa] rounded-xl p-4">
-                <p className="text-xs text-[#6B7280] mb-1">Payment per Volunteer</p>
-                <p className="text-[#10B981] font-bold text-lg">{formatCurrency(selectedEvent.paymentPerVolunteer)}</p>
+                <p className="text-xs text-[#6B7280] mb-1">Stipend</p>
+                {selectedEvent.paymentPerMaleVolunteer || selectedEvent.paymentPerFemaleVolunteer ? (
+                  <div className="space-y-1">
+                    {selectedEvent.paymentPerMaleVolunteer && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-blue-500 font-medium">♂ Boys</span>
+                        <span className="text-[#10B981] font-bold">{formatCurrency(selectedEvent.paymentPerMaleVolunteer)}</span>
+                      </div>
+                    )}
+                    {selectedEvent.paymentPerFemaleVolunteer && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-pink-500 font-medium">♀ Girls</span>
+                        <span className="text-[#10B981] font-bold">{formatCurrency(selectedEvent.paymentPerFemaleVolunteer)}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[#10B981] font-bold text-lg">{formatCurrency(selectedEvent.paymentPerVolunteer)}</p>
+                )}
               </div>
               <div className="bg-[#ebf2fa] rounded-xl p-4">
                 <p className="text-xs text-[#6B7280] mb-1">Category</p>
